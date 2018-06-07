@@ -2,6 +2,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
 using Api3.Models;
+using Api3;
+using System.Threading.Tasks;
+using Newtonsoft.Json.Linq;
+using System.Net.Http;
+using System.Net;
+using System;
+using Newtonsoft.Json;
 
 namespace Api3.Controllers
 {
@@ -9,234 +16,135 @@ namespace Api3.Controllers
     [ApiController]
     public class Api3Controller : ControllerBase
     {
-        List<Item> _itemList;
-        public Api3Controller()
+        private readonly ApiContext _context;
+
+        public Api3Controller(ApiContext context)
         {
-            FillAllListsValues();
+            _context = context;
+        }
+
+        public string GetJsonFromBody()
+        {
+            try
+            {
+                if (!this.Request.ContentLength.HasValue)
+                {
+                    return null;
+                }
+                int len = (int)(this.Request.ContentLength ?? 0);
+                byte[] buff = new byte[len];
+                this.Request.Body.Read(buff, 0, len);
+                string result = System.Text.Encoding.Default.GetString(buff);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Error: " + ex.Message.ToString());
+                return null;
+            }
+        }
+
+        [HttpPost]
+        [Route("customercreate")]
+        public ActionResult<HttpResponseMessage> CustomerCreate()
+        {
+            string data = GetJsonFromBody();
+            Customer customer = JsonConvert.DeserializeObject<Customer>(data);
+            if (data == null)
+                return new HttpResponseMessage { StatusCode = HttpStatusCode.BadRequest, ReasonPhrase = "POST body is null" };
+
+            try
+            {
+                Customer lastCustomer = _context.Customer.LastOrDefault();
+                if(lastCustomer != null)
+                {
+                    customer.CustomerId = lastCustomer.CustomerId + 1;
+                }
+                else
+                {
+                    customer.CustomerId = 1;
+                }
+                _context.Customer.Add(customer);
+                _context.SaveChanges();
+            }
+            catch (Exception ex)
+            {
+                return new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError, ReasonPhrase = $"Customer could not be created: {ex.InnerException}" };
+            }
+            return new HttpResponseMessage { StatusCode = HttpStatusCode.OK, ReasonPhrase = "Saved" };
         }
 
         [HttpGet]
-        [Route("items")]
-        public ActionResult <List<Item>> GetAll()
+        [Route("customerlist")]
+        public ActionResult<List<Customer>>  GetCustomers()
         {
-            return _itemList.ToList();
+            List<Customer> customer = _context.Customer.ToList();
+            return customer;
         }
 
-        [HttpGet("{id}")]
-        public ActionResult<Item> GetById(string id)
+        [HttpGet]
+        [Route("customer/{id}")]
+        public ActionResult<Customer> GetCustomerById(int id)
         {
-            Item item = _itemList.Where(x => x.ItemId == id).FirstOrDefault();
-            if (item == null)
+            Customer customer = _context.Customer.Where(x => x.CustomerId == id).FirstOrDefault();
+            if (customer == null)
             {
                 return NotFound();
             }
-            return item;
+            return customer;
         }
 
-        public void FillAllListsValues()
+        [HttpPost]
+        [Route("customerupdate")]
+        public HttpResponseMessage CustomerUpdate([FromBody] JObject data)
         {
-            _itemList = new List<Item>();
+            if (data == null)
+                return new HttpResponseMessage { StatusCode = HttpStatusCode.BadRequest, ReasonPhrase = "POST body is null" };
 
-            Item Item1 = new Item
+            try
             {
-                ItemId = "1",
-                ItemName = "Angelo M. Ullman",
-                ItemPhone = "123456789",
-                ItemAddress = "Angelo Address",
-                ItemEmail = "Angelo@mail.com"
-            };
-
-            Item Item2 = new Item
+                int customerId = data.GetValue("CustomerId").Value<int>();
+                Customer customerUpdate = _context.Customer.Where(x => x.CustomerId == customerId).FirstOrDefault();
+                if (customerUpdate != null)
+                {
+                    customerUpdate.CustomerName = data.GetValue("CustomerName").Value<string>();
+                    customerUpdate.CustomerPhone = data.GetValue("CustomerPhone").Value<string>();
+                    customerUpdate.CustomerAddress = data.GetValue("CustomerAddress").Value<string>();
+                    customerUpdate.CustomerEmail = data.GetValue("CustomerEmail").Value<string>();
+                    _context.Customer.Update(customerUpdate);
+                    _context.SaveChanges();
+                }
+            }
+            catch (Exception ex)
             {
-                ItemId = "2",
-                ItemName = "Maudie V. Hall",
-                ItemPhone = "234567891",
-                ItemAddress = "Maudie Address",
-                ItemEmail = "Maudie@mail.com"
-            };
+                return new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError, ReasonPhrase = $"Customer could not be updated: {ex.InnerException}" };
+            }
+            return new HttpResponseMessage { StatusCode = HttpStatusCode.OK, ReasonPhrase = "Updated" };
+        }
 
-            Item Item3 = new Item
+        [HttpPost]
+        [Route("customerdelete")]
+        public HttpResponseMessage SetCustomerDeleteById([FromBody] JObject data)
+        {
+            try
             {
-                ItemId = "3",
-                ItemName = "David M. Brooks",
-                ItemPhone = "345678912",
-                ItemAddress = "David Address",
-                ItemEmail = "David@mail.com"
-            };
-
-            Item Item4 = new Item
+                int id = data.GetValue("CustomerId").Value<int>();
+                Customer customer = _context.Customer.Where(x => x.CustomerId == id).FirstOrDefault();
+                if (customer != null)
+                {
+                    _context.Customer.Remove(customer);
+                    _context.SaveChanges();
+                }
+                else
+                {
+                    return new HttpResponseMessage { StatusCode = HttpStatusCode.OK, ReasonPhrase = "Notfound"};
+                }
+            }
+            catch (Exception ex)
             {
-                ItemId = "4",
-                ItemName = "Marcelle S. Padilla",
-                ItemPhone = "456789123",
-                ItemAddress = "Marcelle Address",
-                ItemEmail = "Marcelle@mail.com"
-            };
-
-            Item Item5 = new Item
-            {
-                ItemId = "5",
-                ItemName = "Evelyn S. Bradley",
-                ItemPhone = "567891234",
-                ItemAddress = "Evelyn Address",
-                ItemEmail = "Evelyn@mail.com"
-            };
-
-            Item Item6 = new Item
-            {
-                ItemId = "6",
-                ItemName = "James C. Turner",
-                ItemPhone = "678912345",
-                ItemAddress = "James Address",
-                ItemEmail = "James@mail.com"
-            };
-
-            Item Item7 = new Item
-            {
-                ItemId = "7",
-                ItemName = "Heriberto E. Witte",
-                ItemPhone = "789123456",
-                ItemAddress = "Heriberto Address",
-                ItemEmail = "Heriberto@mail.com"
-            };
-
-            Item Item8 = new Item
-            {
-                ItemId = "8",
-                ItemName = "Carol J. Bender",
-                ItemPhone = "891234567",
-                ItemAddress = "Carol Address",
-                ItemEmail = "Carol@mail.com"
-            };
-
-            Item Item9 = new Item
-            {
-                ItemId = "9",
-                ItemName = "Michelle M. Borror",
-                ItemPhone = "132457689",
-                ItemAddress = "Michelle Address",
-                ItemEmail = "Michelle@mail.com"
-            };
-
-            Item Item10 = new Item
-            {
-                ItemId = "10",
-                ItemName = "Donald P. Tewksbury",
-                ItemPhone = "324576891",
-                ItemAddress = "Donald Address",
-                ItemEmail = "Donald@mail.com"
-            };
-
-            Item Item11 = new Item
-            {
-                ItemId = "11",
-                ItemName = "Kenneth P. Moler",
-                ItemPhone = "245768913",
-                ItemAddress = "Kenneth Address",
-                ItemEmail = "Kenneth@mail.com"
-            };
-
-            Item Item12 = new Item
-            {
-                ItemId = "12",
-                ItemName = "David I. Morris",
-                ItemPhone = "457689132",
-                ItemAddress = "David2 Address",
-                ItemEmail = "David2@mail.com"
-            };
-
-            Item Item13 = new Item
-            {
-                ItemId = "13",
-                ItemName = "David A. Ireland",
-                ItemPhone = "576891324",
-                ItemAddress = "David1 Address",
-                ItemEmail = "David1@mail.com"
-            };
-
-            Item Item14 = new Item
-            {
-                ItemId = "14",
-                ItemName = "Curtis J. Horace",
-                ItemPhone = "768913245",
-                ItemAddress = "Curtis Address",
-                ItemEmail = "Curtis@mail.com"
-            };
-
-            Item Item15 = new Item
-            {
-                ItemId = "15",
-                ItemName = "Lashaun J. Morgan",
-                ItemPhone = "689132457",
-                ItemAddress = "Lashaun Address",
-                ItemEmail = "Lashaun@mail.com"
-            };
-
-            Item Item16 = new Item
-            {
-                ItemId = "16",
-                ItemName = "Joe W. Hanlon",
-                ItemPhone = "891324576",
-                ItemAddress = "Joe Address",
-                ItemEmail = "Joe@mail.com"
-            };
-
-            Item Item17 = new Item
-            {
-                ItemId = "17",
-                ItemName = "Alma J. Olson",
-                ItemPhone = "913245768",
-                ItemAddress = "Alma Address",
-                ItemEmail = "Alma@mail.com"
-            };
-
-            Item Item18 = new Item
-            {
-                ItemId = "18",
-                ItemName = "Brian T. Hayes",
-                ItemPhone = "132337689",
-                ItemAddress = "Brian Address",
-                ItemEmail = "Brian@mail.com"
-            };
-
-            Item Item19 = new Item
-            {
-                ItemId = "19",
-                ItemName = "Deborah G. Kavanaugh",
-                ItemPhone = "324576891",
-                ItemAddress = "Deborah Address",
-                ItemEmail = "Deborah@mail.com"
-            };
-
-            Item Item20 = new Item
-            {
-                ItemId = "20",
-                ItemName = "James S. Gargano",
-                ItemPhone = "245768913",
-                ItemAddress = "James1 Address",
-                ItemEmail = "James1@mail.com"
-            };
-
-            _itemList.Add(Item1);
-            _itemList.Add(Item2);
-            _itemList.Add(Item3);
-            _itemList.Add(Item4);
-            _itemList.Add(Item5);
-            _itemList.Add(Item6);
-            _itemList.Add(Item7);
-            _itemList.Add(Item8);
-            _itemList.Add(Item9);
-            _itemList.Add(Item10);
-            _itemList.Add(Item11);
-            _itemList.Add(Item12);
-            _itemList.Add(Item13);
-            _itemList.Add(Item14);
-            _itemList.Add(Item15);
-            _itemList.Add(Item16);
-            _itemList.Add(Item17);
-            _itemList.Add(Item18);
-            _itemList.Add(Item19);
-            _itemList.Add(Item20);
+                return new HttpResponseMessage { StatusCode = HttpStatusCode.InternalServerError, ReasonPhrase = $"Customer could not be removed: {ex.InnerException}" };
+            }
+            return new HttpResponseMessage { StatusCode = HttpStatusCode.OK, ReasonPhrase = "Removed"};
         }
     }
 }

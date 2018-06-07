@@ -1,0 +1,161 @@
+﻿
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+<div class="col-md-12">
+    <div id="">
+        <fieldset>
+            <legend>Customer</legend>
+            <div class="form-group">
+                <label class="col-md-4 control-label" for="CustomerName">Name</label>
+                <div class="col-md-4">
+                <input id="CustomerName" name="CustomerName" type="text" placeholder="your client's name" class="form-control input-md">
+                <span class="help-block">Full name of your customer</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-4 control-label" for="CustomerPhone">Phone</label>
+                <div class="col-md-4">
+                <input id="CustomerPhone" name="CustomerPhone" type="text" placeholder="your client's name" class="form-control input-md">
+                <span class="help-block">Phone of your customer</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="col-md-4 control-label" for="CustomerAddress">Address</label>
+                <div class="col-md-4">
+                <input id="CustomerAddress" name="CustomerAddress" type="text" placeholder="your client's name" class="form-control input-md">
+                <span class="help-block">Full address of your customer</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+            <label class="col-md-4 control-label" for="CustomerEmail">Email</label>
+            <div class="col-md-4">
+                <div class="input-group">
+                <span class="input-group-addon">&#64</span>
+                <input id="CustomerEmail" name="CustomerEmail" class="form-control" placeholder="yourname@yourdomain.com" type="text">
+                </div>
+                <p class="help-block">Email of your client</p>
+            </div>
+            </div>
+
+            <div class="form-group">
+            <label class="col-md-4 control-label" for="btn-save"></label>
+            <div class="col-md-4">
+                <button id="newcustomer" name="btn-save" class="btn btn-success">Save</button>
+            </div>
+            </div>
+        </fieldset>
+    </div>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th scope="col">#</th>
+      <th scope="col">Name</th>
+      <th scope="col">Address</th>
+      <th scope="col">Phone</th>
+    </tr>
+  </thead>
+
+  <tbody id="itemssource">
+  </tbody>
+</table>
+
+@section scripts
+{
+    <script>
+        $().ready(function(){
+            $("#newcustomer").click(Submit);
+            $("#updatecustomer").click(Submit);
+            $("#deletecustomer").click(Submit);
+            $("#confirm").click(Submit);
+            GetCustomerList();
+        });
+
+        function GetCustomerList()
+        {
+            $.ajax(
+            {
+                type:"GET",
+                url:"customerList",
+                dataType: "json",
+                contentType: "application/json",
+                cache: false,
+                success:function(jsonItems)
+                {
+                    var index = 1;
+                    var obj = JSON.parse(jsonItems.data);
+                    obj.forEach(function(item)
+                    {
+                        $("#itemssource").html();
+                        $("#itemssource").append("<tr><th scope='row'>" + index + "</th><td>" + item.CustomerName + "</td><td>" + item.CustomerAddress + "</td><td>" + item.CustomerPhone + "</td></tr>");
+                        index = index + 1;
+                    })
+                },
+                error:function(er)
+                {
+                    alert("Error!!");
+                }
+            });
+        }
+
+        function GetFormData($form)
+        {
+            var unindexedArray = $form.serializeArray();
+            var indexedArray = {};
+            $.map(unindexedArray,function(n, i)
+            {
+                if ($("input[name='" + n['name'] + "']")[0].getAttribute("type") == "Date" && !!document.documentMode)
+                {
+                    indexedArray[n['name']] = SetFormatDate(n['value']);
+                }
+                else
+                {
+                    indexedArray[n['name']] = n['value'];
+                }
+            });
+            return indexedArray;
+        }
+
+        function Submit()
+        {
+            var newCustomer={
+                CustomerName:document.getElementById("CustomerName").value,
+                CustomerPhone:document.getElementById("CustomerPhone").value,
+                CustomerAddress:document.getElementById("CustomerAddress").value,
+                CustomerEmail:document.getElementById("CustomerEmail").value
+            }
+            var action;
+            if (this.id == "newcustomer")
+            {
+                action = "customercreate";
+            }
+            var objDataSet = JSON.stringify(newCustomer);
+            $.ajax(
+            {
+                type: "POST",
+                url: "customercreate",
+                data: objDataSet,
+                dataType: "json",
+                contentType: "application/json",
+                cache: false,
+                success:function(result)
+                {
+                    GetCustomerList();
+                },
+                error:function(er)
+                {
+                }
+            });
+        }
+
+        function addCustomer(){
+        }
+
+    </script>
+}

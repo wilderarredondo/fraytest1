@@ -1,10 +1,10 @@
 
 using Api3.Models;
 using System.Collections.Generic;
-namespace web.Models
+namespace webpage.Models
 {
     public class ItemViewModel
     {
-        public List<Item> items = new List<Item>();
+        public List<Customer> items = new List<Customer>();
     }
 }
