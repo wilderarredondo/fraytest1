@@ -1,0 +1,65 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+         {
+             "name": ".NET Core Launch (console)",
+             "type": "coreclr",
+             "request": "launch",
+             "preLaunchTask": "build",
+             "program": "${workspaceFolder}/api/bin/Debug/netcoreapp2.1/api.dll",
+             "args": [],
+             "cwd": "${workspaceFolder}/api",
+             "console": "internalConsole",
+             "stopAtEntry": false,
+             "internalConsoleOptions": "openOnSessionStart"
+         },
+         {
+             "name": ".NET Core Attach",
+             "type": "coreclr",
+             "request": "attach",
+             "processId": "${command:pickProcess}"
+         },
+         {
+             "name": "RestApi",
+             "type": "coreclr",
+             "request": "launch",
+             "preLaunchTask": "buildApi",
+             "program": "${workspaceRoot}/Api3/bin/Debug/netcoreapp2.1/Api3.dll",
+             "args": [],
+             "cwd": "${workspaceRoot}/Api3",
+             "stopAtEntry": false,
+             "console": "internalConsole"
+         },
+         {
+             "name": "Web",
+             "type": "coreclr",
+             "request": "launch",
+             "preLaunchTask": "buildWeb",
+             "program": "${workspaceFolder}/wepage/bin/Debug/netcoreapp2.1/wepage.dll",
+             "args": [],
+             "cwd": "${workspaceFolder}/wepage",
+             "stopAtEntry": false,
+             "internalConsoleOptions": "openOnSessionStart",
+             "launchBrowser": {
+                 "enabled": true,
+                 "args": "${auto-detect-url}",
+                 "windows": {
+                     "command": "cmd.exe",
+                     "args": "/C start ${auto-detect-url}"
+                 },
+                 "osx": {
+                     "command": "open"
+                 },
+                 "linux": {
+                     "command": "xdg-open"
+                 }
+             },
+             "env": {
+                 "ASPNETCORE_ENVIRONMENT": "Development"
+             },
+             "sourceFileMap": {
+                 "/Views": "${workspaceFolder}/wepage/Views"
+             }
+         }
+     ,]
+ }

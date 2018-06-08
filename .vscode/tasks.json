@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "buildApi",
+            "command": "dotnet",
+            "type": "process",
+            "args": ["build", "${workspaceFolder}/Api3/Api3.csproj"],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "buildWeb",
+            "command": "dotnet",
+            "type": "process",
+            "args": ["build", "${workspaceFolder}/webpage/wepage.csproj"],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
